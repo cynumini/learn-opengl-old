@@ -46,20 +46,40 @@ static GLuint create_program(const char *vert_code, const char *frag_code) {
     return id;
 }
 
+static void process_input(GLFWwindow *window) {
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+        glfwSetWindowShouldClose(window, 1);
+    }
+}
+
+static void framebuffer_size_callback([[maybe_unused]] GLFWwindow *window,
+                                      int width, int height) {
+    glViewport(0, 0, width, height);
+}
+
 int main(void) {
     ASSERT(glfwSetErrorCallback(on_glfw_error) == NULL);
 
-    glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_WAYLAND);
     ASSERT(glfwInit() == GLFW_TRUE);
 
+    int width = 640, height = 480;
+
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
-    GLFWwindow *window = glfwCreateWindow(640, 480, "Hello, GLFW", NULL, NULL);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    GLFWwindow *window =
+        glfwCreateWindow(width, height, "Hello, GLFW", NULL, NULL);
     ASSERT(window != NULL);
 
+    ASSERT(glfwSetFramebufferSizeCallback(window, framebuffer_size_callback) ==
+           NULL);
+
     glfwMakeContextCurrent(window);
-    glfwSwapInterval(1);
 
     ASSERT(gladLoadGL(glfwGetProcAddress) != 0);
+
+    glViewport(0, 0, width, height);
 
     int flags;
     glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
@@ -123,6 +143,9 @@ int main(void) {
     GLfloat increment = 0.02f;
 
     while (!glfwWindowShouldClose(window)) {
+        process_input(window);
+
+        glClearColor(0.2f, 0.3f, 0.3f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         glUseProgram(program);
