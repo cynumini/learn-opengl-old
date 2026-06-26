@@ -89,7 +89,11 @@ int main(void) {
         2, 3, 0  //
     };
 
-    GLuint buffer;
+    GLuint vao, buffer, ibo;
+
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
     glGenBuffers(1, &buffer);
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(positions), positions, GL_STATIC_DRAW);
@@ -97,7 +101,6 @@ int main(void) {
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0);
 
-    GLuint ibo;
     glGenBuffers(1, &ibo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices,
@@ -105,13 +108,11 @@ int main(void) {
 
     const char vertex_shader[] = {
 #embed "basic.vert.glsl"
-        , 0
-    };
+        , 0};
 
     const char fragment_shader[] = {
 #embed "basic.frag.glsl"
-        , 0
-    };
+        , 0};
 
     GLuint shader = create_shader(vertex_shader, fragment_shader);
 
@@ -120,16 +121,25 @@ int main(void) {
     GLint location = glGetUniformLocation(shader, "u_Color");
     ASSERT(location != -1);
 
-    GLfloat r = 0;
+    glBindVertexArray(0);
+    glUseProgram(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+    GLfloat r = 0.f;
     GLfloat increment = 0.02f;
 
     while (!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glUniform4f(location, r, 0.3f, 0.8f, 1.0f);
+        glUseProgram(shader);
+        glUniform4f(location, r, 0.3f, 0.8f, 1.f);
+
+        glBindVertexArray(vao);
+
         glDrawElements(GL_TRIANGLES, ARRAY_LEN(indices), GL_UNSIGNED_INT, 0);
 
-        if (r > 1.0f || r < 0.0f)
+        if (r > 1.0f || r < 0.f)
             increment *= -1;
 
         r += increment;
