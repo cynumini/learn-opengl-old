@@ -1,22 +1,54 @@
-#include "error_callback.h"
+#include "log.h"
 
+#include <stdarg.h>
 #include <stdio.h>
+
+#include "sakana.h"
 
 #define RED "\x1B[31m"
 #define GREEN "\x1B[32m"
 #define YELLOW "\x1b[33m"
 #define RESET "\x1B[0m"
 
+__attribute__((format(printf, 2, 3))) void log_msg(LogKind kind,
+                                                   const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+
+    switch (kind) {
+    case LOG_KIND_INFO: {
+        fprintf(stderr, GREEN "INFO" RESET ": ");
+        break;
+    }
+    case LOG_KIND_WARN: {
+        fprintf(stderr, YELLOW "WARN" RESET ": ");
+        break;
+    }
+    case LOG_KIND_ERROR: {
+        fprintf(stderr, RED "ERROR" RESET ": ");
+        break;
+    }
+    default: {
+        UNREACHABLE;
+    };
+    }
+    vfprintf(stderr, fmt, args);
+    fprintf(stderr, "\n");
+
+    va_end(args);
+}
+
 void on_glfw_error(int error_code, const char *description) {
-    fprintf(stderr, RED "ERROR" RESET ": %d %s\n", error_code, description);
+    LOG_ERROR("%d %s", error_code, description);
 }
 
 void on_gl_error(GLenum source, GLenum type, GLuint id, GLenum severity,
                  [[maybe_unused]] GLsizei length, const GLchar *msg,
                  [[maybe_unused]] const void *data) {
     const char *_source;
-    const char *_type;
+    const char *_type = NULL;
     const char *_severity;
+    LogKind log_kind = LOG_KIND_INFO;
 
     switch (source) {
     case GL_DEBUG_SOURCE_API:
@@ -44,25 +76,29 @@ void on_gl_error(GLenum source, GLenum type, GLuint id, GLenum severity,
 
     switch (type) {
     case GL_DEBUG_TYPE_ERROR:
-        _type = RED "ERROR" RESET;
+        log_kind = LOG_KIND_ERROR;
         break;
     case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
-        _type = YELLOW "DEPRECATED BEHAVIOR" RESET;
+        _type = "DEPRECATED BEHAVIOR";
+        log_kind = LOG_KIND_WARN;
         break;
     case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
-        _type = RED "UDEFINED BEHAVIOR" RESET;
+        _type = "UDEFINED BEHAVIOR";
+        log_kind = LOG_KIND_ERROR;
         break;
     case GL_DEBUG_TYPE_PORTABILITY:
-        _type = YELLOW "PORTABILITY" RESET;
+        _type = "PORTABILITY";
+        log_kind = LOG_KIND_WARN;
         break;
     case GL_DEBUG_TYPE_PERFORMANCE:
-        _type = YELLOW "PERFORMANCE" RESET;
+        _type =  "PERFORMANCE";
+        log_kind = LOG_KIND_WARN;
         break;
     case GL_DEBUG_TYPE_OTHER:
-        _type = GREEN "OTHER" RESET;
+        _type = "OTHER";
         break;
     case GL_DEBUG_TYPE_MARKER:
-        _type = GREEN "MARKER" RESET;
+        _type = "MARKER";
         break;
     default:
         _type = "UNKNOWN";
@@ -87,6 +123,9 @@ void on_gl_error(GLenum source, GLenum type, GLuint id, GLenum severity,
         break;
     }
 
-    fprintf(stderr, "%s (%u): %s, raised from %s: %s\n", _type, id, _severity,
-            _source, msg);
+    if (_type == NULL) {
+        log_msg(log_kind, "%s (%u) from %s: %s", _severity, id, _source, msg);
+    } else {
+        log_msg(log_kind, "%s - %s (%u) from %s: %s", _type, _severity, id, _source, msg);
+    }
 }
