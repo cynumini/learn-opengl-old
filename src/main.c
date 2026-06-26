@@ -48,8 +48,7 @@ static GLuint create_program(const char *vert_code, const char *frag_code) {
         int len;
         glGetProgramiv(id, GL_INFO_LOG_LENGTH, &len);
         char *msg = (char *)calloc((size_t)len, sizeof(char));
-        log_msg(LOG_KIND_ERROR, false,
-                "Program link: %s", msg);
+        log_msg(LOG_KIND_ERROR, false, "Program link: %s", msg);
         glGetProgramInfoLog(id, len, &len, msg);
         UNREACHABLE;
     }
@@ -89,14 +88,14 @@ int main(void) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    GLFWwindow *window =
-        glfwCreateWindow(screen_width, screen_height, "LearnOpenGL", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(screen_width, screen_height,
+                                          "LearnOpenGL", NULL, NULL);
     ASSERT(window != NULL);
 
     glfwMakeContextCurrent(window);
 
     ASSERT(glfwSetFramebufferSizeCallback(window, framebuffer_size_callback) ==
-               NULL);
+           NULL);
 
     ASSERT(gladLoadGL(glfwGetProcAddress) != 0);
 
@@ -110,31 +109,47 @@ int main(void) {
     LOG_INFO("OpenGL version is %s", glGetString(GL_VERSION));
 
     GLfloat vertices[] = {
-        -0.5f, -0.5f, 0.f, // left
-        0.5f, -0.5f, 0.f, // right
-        0.f, 0.5f, 0.f, // top
+        0.5f,  0.5f,  0.0f, // top right
+        0.5f,  -0.5f, 0.0f, // bottom right
+        -0.5f, -0.5f, 0.0f, // bottom left
+        -0.5f, 0.5f,  0.0f, // top left
     };
 
-    GLuint VAO, VBO;
+    GLuint indices[] = {
+        0, 1, 3, // first triangle
+        1, 2, 3, // second triangle
+    };
+
+    GLuint VAO, VBO, EBO;
 
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
 
-    glBindVertexArray(VAO);
+    {
+        glBindVertexArray(VAO);
 
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices,
+                     GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, 0);
-    glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices,
+                     GL_STATIC_DRAW);
+
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, 0);
+
+        glEnableVertexAttribArray(0);
+
+        glBindVertexArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    }
 
     GLuint program = create_program(vertex_shader, fragment_shader);
 
-    glUseProgram(program);
-
-    glBindVertexArray(0);
-    glUseProgram(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    // Wireframe mode
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     while (!glfwWindowShouldClose(window)) {
         process_input(window);
@@ -144,7 +159,7 @@ int main(void) {
 
         glUseProgram(program);
         glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
