@@ -6,6 +6,7 @@ project(
 
 sources = [
     'src/main.c',
+    'src/error_callback.c',
 ]
 
 glad_inc = include_directories('glad/include')
