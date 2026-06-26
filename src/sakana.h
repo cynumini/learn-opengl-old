@@ -22,7 +22,7 @@ _Noreturn void skn_assert_fail(const char *expr, const char *file, int line,
                              const char *func);
 _Noreturn void skn_unreachable(const char *file, int line, const char *func);
 #define ASSERT(x)                                                              \
-    ((void)((x) || (skn_assert_fail(#x, __FILE__, __LINE__, __fun__), 0)))
+    ((void)((x) || (skn_assert_fail(#x, __FILE__, __LINE__, __func__), 0)))
 #define UNREACHABLE skn_unreachable(__FILE__, __LINE__, __func__)
 
 #endif // SAKANA_H
