@@ -1,8 +1,6 @@
 #include <glad/gl.h>
 
 #include <GLFW/glfw3.h>
-#include <assert.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 #include "log.h"
@@ -15,10 +13,10 @@ static GLuint compile_shader(GLenum kind, const char *source) {
     int result;
     glGetShaderiv(id, GL_COMPILE_STATUS, &result);
     if (result == GL_FALSE) {
-        int length;
-        glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
-        char *message = (char *)calloc((size_t)length, sizeof(char));
-        glGetShaderInfoLog(id, length, &length, message);
+        int len;
+        glGetShaderiv(id, GL_INFO_LOG_LENGTH, &len);
+        char *msg = (char *)calloc((size_t)len, sizeof(char));
+        glGetShaderInfoLog(id, len, &len, msg);
         const char *type;
         if (kind == GL_VERTEX_SHADER) {
             type = "vertex";
@@ -28,45 +26,40 @@ static GLuint compile_shader(GLenum kind, const char *source) {
             UNREACHABLE;
         }
         log_msg(LOG_KIND_ERROR, false,
-                "Failed to compile %s shader with error:\n%s", type, message);
-        free(message);
+                "Failed to compile %s shader with error:\n%s", type, msg);
+        free(msg);
         UNREACHABLE;
     }
     return id;
 }
 
-static GLuint create_shader(const char *vertex_shader,
-                            const char *fragment_shader) {
-    GLuint program = glCreateProgram();
-
-    GLuint vs = compile_shader(GL_VERTEX_SHADER, vertex_shader);
-    GLuint fs = compile_shader(GL_FRAGMENT_SHADER, fragment_shader);
-
-    glAttachShader(program, vs);
-    glAttachShader(program, fs);
-    glLinkProgram(program);
-    glValidateProgram(program);
-
-    glDeleteShader(vs);
-    glDeleteShader(fs);
-
-    return program;
+static GLuint create_program(const char *vert_code, const char *frag_code) {
+    GLuint id = glCreateProgram();
+    GLuint vert_shader = compile_shader(GL_VERTEX_SHADER, vert_code);
+    GLuint frag_shader = compile_shader(GL_FRAGMENT_SHADER, frag_code);
+    glAttachShader(id, vert_shader);
+    glAttachShader(id, frag_shader);
+    glDeleteShader(vert_shader);
+    glDeleteShader(frag_shader);
+    glLinkProgram(id);
+    glValidateProgram(id);
+    return id;
 }
 
 int main(void) {
-    assert(glfwSetErrorCallback(on_glfw_error) == NULL);
+    ASSERT(glfwSetErrorCallback(on_glfw_error) == NULL);
 
     glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_WAYLAND);
-    assert(glfwInit() == GLFW_TRUE);
+    ASSERT(glfwInit() == GLFW_TRUE);
 
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
     GLFWwindow *window = glfwCreateWindow(640, 480, "Hello, GLFW", NULL, NULL);
-    assert(window != NULL);
+    ASSERT(window != NULL);
 
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
 
-    assert(gladLoadGL(glfwGetProcAddress) != 0);
+    ASSERT(gladLoadGL(glfwGetProcAddress) != 0);
 
     int flags;
     glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
@@ -114,11 +107,11 @@ int main(void) {
 #embed "basic.frag.glsl"
         , 0};
 
-    GLuint shader = create_shader(vertex_shader, fragment_shader);
+    GLuint program = create_program(vertex_shader, fragment_shader);
 
-    glUseProgram(shader);
+    glUseProgram(program);
 
-    GLint location = glGetUniformLocation(shader, "u_Color");
+    GLint location = glGetUniformLocation(program, "u_Color");
     ASSERT(location != -1);
 
     glBindVertexArray(0);
@@ -132,14 +125,12 @@ int main(void) {
     while (!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glUseProgram(shader);
+        glUseProgram(program);
         glUniform4f(location, r, 0.3f, 0.8f, 1.f);
-
         glBindVertexArray(vao);
-
         glDrawElements(GL_TRIANGLES, ARRAY_LEN(indices), GL_UNSIGNED_INT, 0);
 
-        if (r > 1.0f || r < 0.f)
+        if (r > 1.f || r < 0.f)
             increment *= -1;
 
         r += increment;

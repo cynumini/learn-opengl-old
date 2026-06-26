@@ -10,32 +10,32 @@ void on_glfw_error(int error_code, const char *description) {
 void on_gl_error(GLenum source, GLenum type, GLuint id, GLenum severity,
                  [[maybe_unused]] GLsizei length, const GLchar *msg,
                  [[maybe_unused]] const void *data) {
-    const char *_source;
-    const char *_type = NULL;
-    const char *_severity;
+    const char *source_str;
+    const char *type_str = NULL;
+    const char *severity_str;
     LogKind log_kind = LOG_KIND_INFO;
 
     switch (source) {
     case GL_DEBUG_SOURCE_API:
-        _source = "API";
+        source_str = "API";
         break;
     case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
-        _source = "WINDOW SYSTEM";
+        source_str = "WINDOW SYSTEM";
         break;
     case GL_DEBUG_SOURCE_SHADER_COMPILER:
-        _source = "SHADER COMPILER";
+        source_str = "SHADER COMPILER";
         break;
     case GL_DEBUG_SOURCE_THIRD_PARTY:
-        _source = "THIRD PARTY";
+        source_str = "THIRD PARTY";
         break;
     case GL_DEBUG_SOURCE_APPLICATION:
-        _source = "APPLICATION";
+        source_str = "APPLICATION";
         break;
     case GL_DEBUG_SOURCE_OTHER:
-        _source = "UNKNOWN";
+        source_str = "UNKNOWN";
         break;
     default:
-        _source = "UNKNOWN";
+        source_str = "UNKNOWN";
         break;
     }
 
@@ -44,54 +44,55 @@ void on_gl_error(GLenum source, GLenum type, GLuint id, GLenum severity,
         log_kind = LOG_KIND_ERROR;
         break;
     case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
-        _type = "DEPRECATED BEHAVIOR";
+        type_str = "DEPRECATED BEHAVIOR";
         log_kind = LOG_KIND_WARN;
         break;
     case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
-        _type = "UDEFINED BEHAVIOR";
+        type_str = "UDEFINED BEHAVIOR";
         log_kind = LOG_KIND_ERROR;
         break;
     case GL_DEBUG_TYPE_PORTABILITY:
-        _type = "PORTABILITY";
+        type_str = "PORTABILITY";
         log_kind = LOG_KIND_WARN;
         break;
     case GL_DEBUG_TYPE_PERFORMANCE:
-        _type = "PERFORMANCE";
+        type_str = "PERFORMANCE";
         log_kind = LOG_KIND_WARN;
         break;
     case GL_DEBUG_TYPE_OTHER:
-        _type = "OTHER";
+        type_str = "OTHER";
         break;
     case GL_DEBUG_TYPE_MARKER:
-        _type = "MARKER";
+        type_str = "MARKER";
         break;
     default:
-        _type = "UNKNOWN";
+        type_str = "UNKNOWN";
         break;
     }
 
     switch (severity) {
     case GL_DEBUG_SEVERITY_HIGH:
-        _severity = RED "HIGH" RESET;
+        severity_str = RED "HIGH" RESET;
         break;
     case GL_DEBUG_SEVERITY_MEDIUM:
-        _severity = YELLOW "MEDIUM" RESET;
+        severity_str = YELLOW "MEDIUM" RESET;
         break;
     case GL_DEBUG_SEVERITY_LOW:
-        _severity = GREEN "LOW" RESET;
+        severity_str = GREEN "LOW" RESET;
         break;
     case GL_DEBUG_SEVERITY_NOTIFICATION:
-        _severity = "NOTIFICATION";
+        severity_str = "NOTIFICATION";
         break;
     default:
-        _severity = "UNKNOWN";
+        severity_str = "UNKNOWN";
         break;
     }
 
-    if (_type == NULL) {
-        log_msg(log_kind, true, "%s (%u) from %s: %s", _severity, id, _source, msg);
+    if (type_str == NULL) {
+        log_msg(log_kind, true, "%s (%u) from %s: %s", severity_str, id,
+                source_str, msg);
     } else {
-        log_msg(log_kind, true, "%s - %s (%u) from %s: %s", _type, _severity, id,
-                _source, msg);
+        log_msg(log_kind, true, "%s - %s (%u) from %s: %s", type_str,
+                severity_str, id, source_str, msg);
     }
 }
