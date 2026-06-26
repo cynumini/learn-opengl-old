@@ -3,9 +3,55 @@
 #include <GLFW/glfw3.h>
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "log.h"
 #include "sakana.h"
+
+static GLuint compile_shader(GLenum kind, const char *source) {
+    GLuint id = glCreateShader(kind);
+    glShaderSource(id, 1, &source, NULL);
+    glCompileShader(id);
+    int result;
+    glGetShaderiv(id, GL_COMPILE_STATUS, &result);
+    if (result == GL_FALSE) {
+        int length;
+        glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
+        char *message = (char *)calloc((size_t)length, sizeof(char));
+        glGetShaderInfoLog(id, length, &length, message);
+        const char *type;
+        if (kind == GL_VERTEX_SHADER) {
+            type = "vertex";
+        } else if (kind == GL_FRAGMENT_SHADER) {
+            type = "fragment";
+        } else {
+            UNREACHABLE;
+        }
+        log_msg(LOG_KIND_ERROR, false,
+                "Failed to compile %s shader with error:\n%s", type, message);
+        free(message);
+        UNREACHABLE;
+    }
+    return id;
+}
+
+static GLuint create_shader(const char *vertex_shader,
+                            const char *fragment_shader) {
+    GLuint program = glCreateProgram();
+
+    GLuint vs = compile_shader(GL_VERTEX_SHADER, vertex_shader);
+    GLuint fs = compile_shader(GL_FRAGMENT_SHADER, fragment_shader);
+
+    glAttachShader(program, vs);
+    glAttachShader(program, fs);
+    glLinkProgram(program);
+    glValidateProgram(program);
+
+    glDeleteShader(vs);
+    glDeleteShader(fs);
+
+    return program;
+}
 
 int main(void) {
     assert(glfwSetErrorCallback(on_glfw_error) == NULL);
@@ -42,6 +88,18 @@ int main(void) {
     glBufferData(GL_ARRAY_BUFFER, sizeof(positions), positions, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0);
+
+    const char vertex_shader[] = {
+#embed "basic.vert.glsl"
+    };
+
+    const char fragment_shader[] = {
+#embed "basic.frag.glsl"
+    };
+
+    GLuint shader = create_shader(vertex_shader, fragment_shader);
+
+    glUseProgram(shader);
 
     while (!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT);

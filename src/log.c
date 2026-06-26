@@ -1,42 +1,7 @@
 #include "log.h"
 
-#include <stdarg.h>
-#include <stdio.h>
-
 #include "sakana.h"
-
-#define RED "\x1B[31m"
-#define GREEN "\x1B[32m"
-#define YELLOW "\x1b[33m"
-#define RESET "\x1B[0m"
-
-__attribute__((format(printf, 2, 3))) void log_msg(LogKind kind,
-                                                   const char *fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
-
-    switch (kind) {
-    case LOG_KIND_INFO: {
-        fprintf(stderr, GREEN "INFO" RESET ": ");
-        break;
-    }
-    case LOG_KIND_WARN: {
-        fprintf(stderr, YELLOW "WARN" RESET ": ");
-        break;
-    }
-    case LOG_KIND_ERROR: {
-        fprintf(stderr, RED "ERROR" RESET ": ");
-        break;
-    }
-    default: {
-        UNREACHABLE;
-    };
-    }
-    vfprintf(stderr, fmt, args);
-    fprintf(stderr, "\n");
-
-    va_end(args);
-}
+#include <stdio.h>
 
 void on_glfw_error(int error_code, const char *description) {
     LOG_ERROR("%d %s", error_code, description);
@@ -91,7 +56,7 @@ void on_gl_error(GLenum source, GLenum type, GLuint id, GLenum severity,
         log_kind = LOG_KIND_WARN;
         break;
     case GL_DEBUG_TYPE_PERFORMANCE:
-        _type =  "PERFORMANCE";
+        _type = "PERFORMANCE";
         log_kind = LOG_KIND_WARN;
         break;
     case GL_DEBUG_TYPE_OTHER:
@@ -124,8 +89,9 @@ void on_gl_error(GLenum source, GLenum type, GLuint id, GLenum severity,
     }
 
     if (_type == NULL) {
-        log_msg(log_kind, "%s (%u) from %s: %s", _severity, id, _source, msg);
+        log_msg(log_kind, true, "%s (%u) from %s: %s", _severity, id, _source, msg);
     } else {
-        log_msg(log_kind, "%s - %s (%u) from %s: %s", _type, _severity, id, _source, msg);
+        log_msg(log_kind, true, "%s - %s (%u) from %s: %s", _type, _severity, id,
+                _source, msg);
     }
 }

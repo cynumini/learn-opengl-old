@@ -7,6 +7,7 @@ project(
 sources = [
     'src/main.c',
     'src/log.c',
+    'src/sakana.c',
 ]
 
 glad_inc = include_directories('glad/include')
